@@ -77,7 +77,7 @@ export function EnvelopeScrollSequence() {
             draggable={false}
             decoding="sync"
             className="absolute inset-0 h-full w-full select-none object-cover"
-            style={{ opacity: i === 0 ? 1 : 0, willChange: "opacity" }}
+            style={{ opacity: i === 0 ? 1 : 0, willChange: "opacity", imageRendering: "-webkit-optimize-contrast" }}
           />
         ))}
       </div>
