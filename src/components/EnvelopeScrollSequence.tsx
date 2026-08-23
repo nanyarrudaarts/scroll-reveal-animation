@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 
-import f1 from "@/assets/frame-002.png.asset.json";
-import f2 from "@/assets/frame-003.png.asset.json";
-import f3 from "@/assets/frame-004.png.asset.json";
-import f4 from "@/assets/frame-007.png.asset.json";
-import f5 from "@/assets/frame-011.png.asset.json";
-import f6 from "@/assets/frame-013.png.asset.json";
+import f01 from "@/assets/frame-002.png.asset.json";
+import f02 from "@/assets/frame-003.png.asset.json";
+import f03 from "@/assets/frame-004.png.asset.json";
+import f04 from "@/assets/frame-005.png.asset.json";
+import f05 from "@/assets/frame-006.png.asset.json";
+import f06 from "@/assets/frame-007.png.asset.json";
+import f07 from "@/assets/frame-008.png.asset.json";
+import f08 from "@/assets/frame-009.png.asset.json";
+import f09 from "@/assets/frame-010.png.asset.json";
+import f10 from "@/assets/frame-011.png.asset.json";
+import f11 from "@/assets/frame-013.png.asset.json";
 
-const FRAMES = [f1.url, f2.url, f3.url, f4.url, f5.url, f6.url];
+const FRAMES = [f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11].map((a) => a.url);
 
 export function EnvelopeScrollSequence() {
   const sectionRef = useRef<HTMLElement>(null);
-  const [index, setIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const currentRef = useRef(-1);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let done = 0;
@@ -20,7 +26,7 @@ export function EnvelopeScrollSequence() {
       const img = new Image();
       img.onload = img.onerror = () => {
         done += 1;
-        if (done === FRAMES.length) setLoaded(true);
+        if (done === FRAMES.length) setReady(true);
       };
       img.src = src;
     });
@@ -32,11 +38,16 @@ export function EnvelopeScrollSequence() {
       raf = 0;
       const el = sectionRef.current;
       if (!el) return;
-      const rect = el.getBoundingClientRect();
       const total = el.offsetHeight - window.innerHeight;
-      const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0;
-      const next = Math.min(FRAMES.length - 1, Math.floor(progress * FRAMES.length));
-      setIndex(next);
+      const scrolled = -el.getBoundingClientRect().top;
+      const progress = total > 0 ? Math.min(1, Math.max(0, scrolled / total)) : 0;
+      const next = Math.min(FRAMES.length - 1, Math.round(progress * (FRAMES.length - 1)));
+      if (next === currentRef.current) return;
+      const prev = imgRefs.current[currentRef.current];
+      if (prev) prev.style.opacity = "0";
+      const node = imgRefs.current[next];
+      if (node) node.style.opacity = "1";
+      currentRef.current = next;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
@@ -49,23 +60,26 @@ export function EnvelopeScrollSequence() {
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [ready]);
 
   return (
-    <section ref={sectionRef} className="relative h-[450vh] bg-background">
-      <div className="sticky top-0 flex h-screen items-center justify-center overflow-hidden">
-        <div className="relative h-full w-full">
-          {FRAMES.map((src, i) => (
-            <img
-              key={src}
-              src={src}
-              alt={`Art Mail Club envelope frame ${i + 1}`}
-              draggable={false}
-              className="absolute inset-0 h-full w-full object-contain transition-opacity duration-150"
-              style={{ opacity: loaded && i === index ? 1 : 0 }}
-            />
-          ))}
-        </div>
+    <section ref={sectionRef} className="relative h-[500vh]">
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
+        {FRAMES.map((src, i) => (
+          <img
+            key={src}
+            ref={(node) => {
+              imgRefs.current[i] = node;
+            }}
+            src={src}
+            alt={i === 0 ? "Envelope Art Mail Club fechado com selo de lacre" : ""}
+            aria-hidden={i !== 0}
+            draggable={false}
+            decoding="sync"
+            className="absolute inset-0 h-full w-full select-none object-cover"
+            style={{ opacity: i === 0 ? 1 : 0, willChange: "opacity" }}
+          />
+        ))}
       </div>
     </section>
   );
